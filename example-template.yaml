@@ -1,0 +1,42 @@
+description: Example Archipelago Configuration with various option types
+name: ExamplePlayer
+game: 
+  A Link to the Past: 10
+  Timespinner: 5
+requires: 
+  version: 0.6.4
+  game:
+    A Link to the Past: 0.6.4
+
+A Link to the Past:
+  accessibility: minimal
+  progression_balancing: 50
+  smallkey_shuffle:
+    original_dungeon: 1
+    any_world: 1
+  crystals_needed_for_gt:
+    random-low: 1
+  crystals_needed_for_ganon:
+    random-range-high-1-7: 1
+  local_items:
+    - Bombos
+    - Ether
+    - Quake
+  non_local_items:
+    - Moon Pearl
+  start_inventory:
+    Pegasus Boots: 1
+    Bombs (3): 2
+  start_hints:
+    - Hammer
+  start_location_hints:
+    - Spike Cave
+  exclude_locations:
+    - Cave 45
+  priority_locations:
+    - Link's House
+
+Timespinner:
+  accessibility: minimal
+  progression_balancing: 50
+  DeathLink: true
