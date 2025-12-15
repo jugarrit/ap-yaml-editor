@@ -9,6 +9,7 @@ interface StringEditorProps {
 export const StringEditor: React.FC<StringEditorProps> = ({ option, onChange }) => {
   return (
     <div className="option-editor">
+      {option.comment && <div className="option-comment"># {option.comment}</div>}
       <label className="option-label">{option.key}</label>
       <input
         type="text"
@@ -29,13 +30,18 @@ interface NumberEditorProps {
 export const NumberEditor: React.FC<NumberEditorProps> = ({ option, onChange }) => {
   return (
     <div className="option-editor">
-      <label className="option-label">{option.key}</label>
+      {option.comment && <div className="option-comment"># {option.comment}</div>}
+      <label className="option-label">
+        {option.key}
+        <span className="option-value-display">{option.value}</span>
+      </label>
       <input
-        type="number"
+        type="range"
+        min="0"
+        max="100"
         value={option.value as number}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="option-input"
-        placeholder={`Enter ${option.key}`}
+        className="option-slider"
       />
     </div>
   );
@@ -49,6 +55,7 @@ interface BooleanEditorProps {
 export const BooleanEditor: React.FC<BooleanEditorProps> = ({ option, onChange }) => {
   return (
     <div className="option-editor">
+      {option.comment && <div className="option-comment"># {option.comment}</div>}
       <label className="option-label">
         <input
           type="checkbox"
@@ -86,6 +93,7 @@ export const ArrayEditor: React.FC<ArrayEditorProps> = ({ option, onChange }) =>
   
   return (
     <div className="option-editor">
+      {option.comment && <div className="option-comment"># {option.comment}</div>}
       <label className="option-label">{option.key}</label>
       <div className="array-editor">
         {arr.map((item, index) => (
@@ -116,10 +124,11 @@ export const ArrayEditor: React.FC<ArrayEditorProps> = ({ option, onChange }) =>
 
 interface WeightedEditorProps {
   option: ParsedOption;
+  simpleMode?: boolean;
   onChange: (value: { [key: string]: number }) => void;
 }
 
-export const WeightedEditor: React.FC<WeightedEditorProps> = ({ option, onChange }) => {
+export const WeightedEditor: React.FC<WeightedEditorProps> = ({ option, simpleMode = false, onChange }) => {
   const weighted = option.value as { [key: string]: number };
   
   const handleAddOption = () => {
@@ -148,34 +157,93 @@ export const WeightedEditor: React.FC<WeightedEditorProps> = ({ option, onChange
     onChange({ ...weighted, [key]: weight });
   };
   
+  const handleRadioSelect = (selectedKey: string) => {
+    const newWeighted: { [key: string]: number } = {};
+    for (const key in weighted) {
+      newWeighted[key] = key === selectedKey ? 50 : 0;
+    }
+    onChange(newWeighted);
+  };
+  
+  // Find the currently selected option (the one with non-zero weight)
+  const selectedKey = Object.entries(weighted).find(([_, weight]) => weight > 0)?.[0] || Object.keys(weighted)[0];
+  
+  // In simple mode, use radio buttons UNLESS the option uses flow style (braces syntax)
+  if (simpleMode && !option.isFlowStyle) {
+    // Simple mode: radio buttons with edit/remove options
+    return (
+      <div className="option-editor">
+        {option.comment && <div className="option-comment"># {option.comment}</div>}
+        <label className="option-label">{option.key}</label>
+        <div className="radio-editor">
+          {Object.keys(weighted).map((key, index) => (
+            <div key={index} className="radio-option-container">
+              <label className="radio-option">
+                <input
+                  type="radio"
+                  name={`${option.key}-radio`}
+                  checked={key === selectedKey}
+                  onChange={() => handleRadioSelect(key)}
+                  className="radio-input"
+                />
+                <input
+                  type="text"
+                  value={key}
+                  onChange={(e) => handleKeyChange(key, e.target.value)}
+                  className="radio-label-input"
+                  placeholder="Option name"
+                />
+              </label>
+              <button
+                onClick={() => handleRemoveOption(key)}
+                className="btn-remove"
+                title="Remove option"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button onClick={handleAddOption} className="btn-add">
+            + Add Option
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Advanced mode: sliders
   return (
     <div className="option-editor">
+      {option.comment && <div className="option-comment"># {option.comment}</div>}
       <label className="option-label">{option.key} (Weighted Options)</label>
       <div className="weighted-editor">
-        {Object.entries(weighted).map(([key, weight]) => (
-          <div key={key} className="weighted-item">
+        {Object.entries(weighted).map(([key, weight], index) => (
+          <div key={index} className="weighted-item">
+            <div className="weighted-item-header">
+              <input
+                type="text"
+                value={key}
+                onChange={(e) => handleKeyChange(key, e.target.value)}
+                className="option-input weighted-key"
+                placeholder="Option name"
+              />
+              <span className="option-value-display">{weight}</span>
+              <button
+                onClick={() => handleRemoveOption(key)}
+                className="btn-remove"
+                title="Remove option"
+              >
+                ×
+              </button>
+            </div>
             <input
-              type="text"
-              value={key}
-              onChange={(e) => handleKeyChange(key, e.target.value)}
-              className="option-input weighted-key"
-              placeholder="Option name"
-            />
-            <input
-              type="number"
+              type="range"
+              min="0"
+              max="100"
               value={weight}
               onChange={(e) => handleWeightChange(key, Number(e.target.value))}
-              className="option-input weighted-value"
-              min="0"
-              placeholder="Weight"
+              className="option-slider"
             />
-            <button
-              onClick={() => handleRemoveOption(key)}
-              className="btn-remove"
-              title="Remove option"
-            >
-              ×
-            </button>
           </div>
         ))}
         <button onClick={handleAddOption} className="btn-add">
@@ -196,6 +264,7 @@ export const ObjectEditor: React.FC<ObjectEditorProps> = ({ option, onChange }) 
   
   return (
     <div className="option-editor">
+      {option.comment && <div className="option-comment"># {option.comment}</div>}
       <label className="option-label">{option.key} (Complex Object)</label>
       <textarea
         value={JSON.stringify(obj, null, 2)}

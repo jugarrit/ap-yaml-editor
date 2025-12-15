@@ -5,6 +5,7 @@ import { OptionEditor } from './OptionEditor';
 interface GameSectionProps {
   gameName: string;
   options: ParsedOption[];
+  simpleMode?: boolean;
   onChange: (index: number, value: any) => void;
   onRemoveGame: () => void;
 }
@@ -12,6 +13,7 @@ interface GameSectionProps {
 export const GameSection: React.FC<GameSectionProps> = ({
   gameName,
   options,
+  simpleMode = false,
   onChange,
   onRemoveGame,
 }) => {
@@ -45,6 +47,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
               <OptionEditor
                 key={option.key}
                 option={option}
+                simpleMode={simpleMode}
                 onChange={(value) => onChange(index, value)}
               />
             ))

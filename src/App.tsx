@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Upload, Download, FileText, Eye } from 'lucide-react';
+import { Upload, Download, FileText, Eye, Save } from 'lucide-react';
 import { parseYamlTemplate, exportToYaml, validateYaml, generateDefaultTemplate, ParsedOption } from './utils/yamlParser';
+import { Document } from 'yaml';
 import { GameSection } from './components/GameSection';
 import { OptionEditor } from './components/OptionEditor';
 import './App.css';
@@ -8,8 +9,13 @@ import './App.css';
 function App() {
   const [rootOptions, setRootOptions] = useState<ParsedOption[]>([]);
   const [gameOptions, setGameOptions] = useState<{ [gameName: string]: ParsedOption[] }>({});
+  const [originalDocument, setOriginalDocument] = useState<Document | undefined>(undefined);
+  const [originalFile, setOriginalFile] = useState<File | undefined>(undefined);
+  const [fileHandle, setFileHandle] = useState<any>(undefined);
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
+  const [simpleMode, setSimpleMode] = useState(false);
   const [hasTemplate, setHasTemplate] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,6 +36,8 @@ function App() {
         const parsed = parseYamlTemplate(content);
         setRootOptions(parsed.rootOptions);
         setGameOptions(parsed.gameOptions);
+        setOriginalDocument(parsed.document);
+        setOriginalFile(file);
         setHasTemplate(true);
         setError('');
       } catch (err) {
@@ -39,38 +47,137 @@ function App() {
     reader.readAsText(file);
   };
 
+  const handleLoadFile = async () => {
+    try {
+      if (!('showOpenFilePicker' in window)) {
+        setError('File System Access API not supported. Please use a modern browser like Chrome or Edge.');
+        return;
+      }
+
+      const [handle] = await (window as any).showOpenFilePicker({
+        types: [{
+          description: 'YAML Files',
+          accept: { 'text/yaml': ['.yaml', '.yml'] },
+        }],
+        multiple: false,
+      });
+
+      const file = await handle.getFile();
+      const content = await file.text();
+      
+      const validation = validateYaml(content);
+      if (!validation.valid) {
+        setError(`Invalid YAML: ${validation.error}`);
+        return;
+      }
+
+      const parsed = parseYamlTemplate(content);
+      setRootOptions(parsed.rootOptions);
+      setGameOptions(parsed.gameOptions);
+      setOriginalDocument(parsed.document);
+      setOriginalFile(file);
+      setFileHandle(handle);
+      setHasTemplate(true);
+      setError('');
+      setSuccess('');
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return; // User cancelled
+      }
+      setError(`Error loading file: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
   const handleLoadDefault = () => {
     try {
       const defaultTemplate = generateDefaultTemplate();
       const parsed = parseYamlTemplate(defaultTemplate);
       setRootOptions(parsed.rootOptions);
       setGameOptions(parsed.gameOptions);
+      setOriginalDocument(parsed.document);
+      setOriginalFile(undefined);
+      setFileHandle(undefined);
       setHasTemplate(true);
       setError('');
+      setSuccess('');
     } catch (err) {
       setError(`Error loading default template: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
-  const handleExport = () => {
+  const handleSave = async () => {
     try {
-      const yamlContent = exportToYaml(rootOptions, gameOptions);
-      const blob = new Blob([yamlContent], { type: 'text/yaml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      const yamlContent = exportToYaml(rootOptions, gameOptions, originalDocument);
+      
+      if (!fileHandle) {
+        setError('No file handle available. The file was not loaded with File System Access API. Try using "Save As" instead or reload the file using the file picker.');
+        return;
+      }
+
+      try {
+        const writable = await fileHandle.createWritable();
+        await writable.write(yamlContent);
+        await writable.close();
+        setError('');
+        setSuccess('File saved successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (e: any) {
+        if (e.name === 'NotAllowedError') {
+          setError('Permission denied. The file may be in a protected folder. Use "Save As" to save to a different location.');
+        } else {
+          setError(`Could not save file: ${e.message || 'Unknown error'}`);
+        }
+      }
+    } catch (err) {
+      setError(`Error saving YAML: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleSaveAs = async () => {
+    try {
+      const yamlContent = exportToYaml(rootOptions, gameOptions, originalDocument);
       
       // Try to use the name from rootOptions if available
       const nameOption = rootOptions.find(opt => opt.key === 'name');
-      const fileName = nameOption?.value ? `${nameOption.value}.yaml` : 'archipelago-config.yaml';
+      const suggestedName = nameOption?.value ? `${nameOption.value}.yaml` : (originalFile?.name || 'archipelago-config.yaml');
       
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (!('showSaveFilePicker' in window)) {
+        setError('File System Access API not supported. Please use a modern browser like Chrome or Edge.');
+        return;
+      }
+
+      try {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName,
+          types: [{
+            description: 'YAML Files',
+            accept: { 'text/yaml': ['.yaml', '.yml'] },
+          }],
+        });
+        
+        const writable = await handle.createWritable();
+        await writable.write(yamlContent);
+        await writable.close();
+        
+        // Update the file handle for future saves
+        setFileHandle(handle);
+        setOriginalFile(new File([yamlContent], suggestedName, { type: 'text/yaml' }));
+        
+        setError('');
+        setSuccess('File saved successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (e: any) {
+        if (e.name === 'AbortError') {
+          return; // User cancelled
+        }
+        if (e.name === 'NotAllowedError') {
+          setError('Permission denied. Try saving to a different location.');
+        } else {
+          setError(`Could not save file: ${e.message || 'Unknown error'}`);
+        }
+      }
     } catch (err) {
-      setError(`Error exporting YAML: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(`Error saving YAML: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -95,7 +202,7 @@ function App() {
 
   const getPreviewContent = () => {
     try {
-      return exportToYaml(rootOptions, gameOptions);
+      return exportToYaml(rootOptions, gameOptions, originalDocument);
     } catch (err) {
       return `Error generating preview: ${err instanceof Error ? err.message : 'Unknown error'}`;
     }
@@ -121,16 +228,10 @@ function App() {
               <p>Load a YAML template file to begin editing your Archipelago configuration</p>
               
               <div className="welcome-actions">
-                <label className="btn-primary">
+                <button className="btn-primary" onClick={handleLoadFile}>
                   <Upload className="icon" />
                   Load Template
-                  <input
-                    type="file"
-                    accept=".yaml,.yml"
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
-                  />
-                </label>
+                </button>
                 
                 <button className="btn-secondary" onClick={handleLoadDefault}>
                   <FileText className="icon" />
@@ -143,21 +244,21 @@ function App() {
                   {error}
                 </div>
               )}
+              
+              {success && (
+                <div className="success">
+                  {success}
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <>
             <div className="toolbar">
-              <label className="btn-secondary btn-small">
+              <button className="btn-secondary btn-small" onClick={handleLoadFile}>
                 <Upload className="icon" />
                 Load New Template
-                <input
-                  type="file"
-                  accept=".yaml,.yml"
-                  onChange={handleFileUpload}
-                  style={{ display: 'none' }}
-                />
-              </label>
+              </button>
               
               <button
                 className="btn-secondary btn-small"
@@ -167,15 +268,36 @@ function App() {
                 {showPreview ? 'Hide Preview' : 'Show Preview'}
               </button>
               
-              <button className="btn-primary btn-small" onClick={handleExport}>
+              <label className="toggle-container">
+                <input
+                  type="checkbox"
+                  checked={simpleMode}
+                  onChange={(e) => setSimpleMode(e.target.checked)}
+                  className="toggle-checkbox"
+                />
+                <span className="toggle-label">Simple Mode</span>
+              </label>
+              
+              <button className="btn-primary btn-small" onClick={handleSave}>
+                <Save className="icon" />
+                Save
+              </button>
+              
+              <button className="btn-secondary btn-small" onClick={handleSaveAs}>
                 <Download className="icon" />
-                Export YAML
+                Save As
               </button>
             </div>
 
             {error && (
               <div className="error">
                 {error}
+              </div>
+            )}
+            
+            {success && (
+              <div className="success">
+                {success}
               </div>
             )}
 
@@ -188,6 +310,7 @@ function App() {
                       <OptionEditor
                         key={option.key}
                         option={option}
+                        simpleMode={simpleMode}
                         onChange={(value) => updateRootOption(index, value)}
                       />
                     ))}
@@ -204,6 +327,7 @@ function App() {
                         key={gameName}
                         gameName={gameName}
                         options={options}
+                        simpleMode={simpleMode}
                         onChange={(index, value) => updateGameOption(gameName, index, value)}
                         onRemoveGame={() => removeGame(gameName)}
                       />

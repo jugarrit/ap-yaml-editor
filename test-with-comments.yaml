@@ -1,0 +1,42 @@
+# This is a test template with comments
+description: Example Archipelago Configuration with comments
+# Player name is required
+name: TestPlayer
+# Define which games to randomize
+game: 
+  A Link to the Past: 10
+  Timespinner: 5
+# Version requirements
+requires: 
+  version: 0.6.4
+
+# A Link to the Past game settings
+A Link to the Past:
+  # Controls how accessible all locations are
+  accessibility: minimal
+  # Balances progression items across the multiworld
+  progression_balancing: 50
+  # Small key shuffle mode
+  smallkey_shuffle:
+    original_dungeon: 1
+    any_world: 1
+  # Number of crystals needed for Ganon's Tower
+  crystals_needed_for_gt:
+    random-low: 1
+  # Items that stay in your world
+  local_items:
+    - Bombos
+    - Ether
+  # Starting inventory items
+  start_inventory:
+    Pegasus Boots: 1
+    Bombs (3): 2
+
+# Timespinner game settings
+Timespinner:
+  # Accessibility setting
+  accessibility: minimal
+  # Progression balancing value
+  progression_balancing: 50
+  # Enable death link feature
+  DeathLink: true
