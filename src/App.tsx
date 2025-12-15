@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Upload, Download, FileText, Eye, Save } from 'lucide-react';
 import { parseYamlTemplate, exportToYaml, validateYaml, generateDefaultTemplate, ParsedOption } from './utils/yamlParser';
 import { Document } from 'yaml';
@@ -17,35 +17,6 @@ function App() {
   const [success, setSuccess] = useState<string>('');
   const [simpleMode, setSimpleMode] = useState(false);
   const [hasTemplate, setHasTemplate] = useState(false);
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const validation = validateYaml(content);
-        
-        if (!validation.valid) {
-          setError(`Invalid YAML: ${validation.error}`);
-          return;
-        }
-
-        const parsed = parseYamlTemplate(content);
-        setRootOptions(parsed.rootOptions);
-        setGameOptions(parsed.gameOptions);
-        setOriginalDocument(parsed.document);
-        setOriginalFile(file);
-        setHasTemplate(true);
-        setError('');
-      } catch (err) {
-        setError(`Error parsing file: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
-    };
-    reader.readAsText(file);
-  };
 
   const handleLoadFile = async () => {
     try {

@@ -33,7 +33,7 @@ export const NumberEditor: React.FC<NumberEditorProps> = ({ option, onChange }) 
       {option.comment && <div className="option-comment"># {option.comment}</div>}
       <label className="option-label">
         {option.key}
-        <span className="option-value-display">{option.value}</span>
+        <span className="option-value-display">{option.value as number}</span>
       </label>
       <input
         type="range"
