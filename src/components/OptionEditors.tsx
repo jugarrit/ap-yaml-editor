@@ -1,8 +1,6 @@
 import React from 'react';
 import { ParsedOption } from '../utils/yamlParser';
 
-const formatComment = (comment: string) => `# ${comment.split('\n').join('\n# ')}`;
-
 interface StringEditorProps {
   option: ParsedOption;
   onChange: (value: string) => void;
@@ -11,7 +9,7 @@ interface StringEditorProps {
 export const StringEditor: React.FC<StringEditorProps> = ({ option, onChange }) => {
   return (
     <div className="option-editor">
-      {option.comment && <div className="option-comment">{formatComment(option.comment)}</div>}
+      {option.comment && <div className="option-comment">{option.comment}</div>}
       <label className="option-label">{option.key}</label>
       <input
         type="text"
@@ -32,7 +30,7 @@ interface NumberEditorProps {
 export const NumberEditor: React.FC<NumberEditorProps> = ({ option, onChange }) => {
   return (
     <div className="option-editor">
-      {option.comment && <div className="option-comment">{formatComment(option.comment)}</div>}
+      {option.comment && <div className="option-comment">{option.comment}</div>}
       <label className="option-label">
         {option.key}
         <span className="option-value-display">{option.value as number}</span>
@@ -57,7 +55,7 @@ interface BooleanEditorProps {
 export const BooleanEditor: React.FC<BooleanEditorProps> = ({ option, onChange }) => {
   return (
     <div className="option-editor">
-      {option.comment && <div className="option-comment">{formatComment(option.comment)}</div>}
+      {option.comment && <div className="option-comment">{option.comment}</div>}
       <label className="option-label">
         <input
           type="checkbox"
@@ -95,7 +93,7 @@ export const ArrayEditor: React.FC<ArrayEditorProps> = ({ option, onChange }) =>
   
   return (
     <div className="option-editor">
-      {option.comment && <div className="option-comment">{formatComment(option.comment)}</div>}
+      {option.comment && <div className="option-comment">{option.comment}</div>}
       <label className="option-label">{option.key}</label>
       <div className="array-editor">
         {arr.map((item, index) => (
@@ -175,7 +173,7 @@ export const WeightedEditor: React.FC<WeightedEditorProps> = ({ option, simpleMo
     // Simple mode: radio buttons with edit/remove options
     return (
       <div className="option-editor">
-        {option.comment && <div className="option-comment">{formatComment(option.comment)}</div>}
+        {option.comment && <div className="option-comment">{option.comment}</div>}
         <label className="option-label">{option.key}</label>
         <div className="radio-editor">
           {Object.keys(weighted).map((key, index) => (
@@ -216,7 +214,7 @@ export const WeightedEditor: React.FC<WeightedEditorProps> = ({ option, simpleMo
   // Advanced mode: sliders
   return (
     <div className="option-editor">
-      {option.comment && <div className="option-comment">{formatComment(option.comment)}</div>}
+      {option.comment && <div className="option-comment">{option.comment}</div>}
       <label className="option-label">{option.key} (Weighted Options)</label>
       <div className="weighted-editor">
         {Object.entries(weighted).map(([key, weight], index) => (
@@ -266,7 +264,7 @@ export const ObjectEditor: React.FC<ObjectEditorProps> = ({ option, onChange }) 
   
   return (
     <div className="option-editor">
-      {option.comment && <div className="option-comment">{formatComment(option.comment)}</div>}
+      {option.comment && <div className="option-comment">{option.comment}</div>}
       <label className="option-label">{option.key} (Complex Object)</label>
       <textarea
         value={JSON.stringify(obj, null, 2)}
