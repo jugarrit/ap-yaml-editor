@@ -15,7 +15,7 @@ function App() {
   const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
-  const [simpleMode, setSimpleMode] = useState(false);
+  const [simpleMode, setSimpleMode] = useState(true);
   const [hasTemplate, setHasTemplate] = useState(false);
 
   const handleLoadFile = async () => {

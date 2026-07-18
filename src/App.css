@@ -341,6 +341,7 @@
   border-radius: 0.25rem;
   border-left: 2px solid #64748b;
   margin-bottom: 0.25rem;
+  white-space: pre-wrap;
 }
 
 .option-label {
