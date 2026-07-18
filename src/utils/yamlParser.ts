@@ -54,6 +54,12 @@ export function parseYamlTemplate(yamlContent: string): ParsedTemplate {
   const rootKeys = ['description', 'name', 'game', 'requires'];
   const rootOptions: ParsedOption[] = [];
   const gameOptions: { [gameName: string]: ParsedOption[] } = {};
+  const normalizeComment = (comment: string): string =>
+    comment
+      .trim()
+      .split('\n')
+      .map((line) => line.replace(/^ /, ''))
+      .join('\n');
   
   // Helper function to extract comment from a YAML node
   const getComment = (key: string, parent?: any): string | undefined => {
@@ -65,19 +71,19 @@ export function parseYamlTemplate(yamlContent: string): ParsedTemplate {
         if (parentNode && isMap(parentNode)) {
           const node = parentNode.get(key, true);
           if (node && typeof node === 'object' && 'commentBefore' in node) {
-            return (node.commentBefore as string)?.trim();
+            return normalizeComment(node.commentBefore as string);
           }
           if (node && typeof node === 'object' && 'comment' in node) {
-            return (node.comment as string)?.trim();
+            return normalizeComment(node.comment as string);
           }
         }
       } else {
         const node = document.contents.get(key, true);
         if (node && typeof node === 'object' && 'commentBefore' in node) {
-          return (node.commentBefore as string)?.trim();
+          return normalizeComment(node.commentBefore as string);
         }
         if (node && typeof node === 'object' && 'comment' in node) {
-          return (node.comment as string)?.trim();
+          return normalizeComment(node.comment as string);
         }
       }
     } catch (e) {
